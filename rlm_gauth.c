@@ -110,8 +110,6 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 
 	if (valid_credentials == USER_CREDENTIALS_VALID) {
 		return RLM_MODULE_OK;
-	} else {
-		return RLM_MODULE_FAIL;
 	}
 
 	return RLM_MODULE_NOOP;
