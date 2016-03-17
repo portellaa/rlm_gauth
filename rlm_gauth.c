@@ -24,7 +24,7 @@ typedef enum {
 } USER_CREDENTIALS;
 
 // Private Methods declaration
-static USER_CREDENTIALS validate_user_credentials(const char *username, const char *password);
+static USER_CREDENTIALS validate_user_credentials(void *instance, const char *username, const char *password);
 static VALUE_PAIR *find_password(REQUEST *request);
 
 /*
@@ -36,17 +36,15 @@ static VALUE_PAIR *find_password(REQUEST *request);
  */
 typedef struct rlm_gauth_t {
 	const char *domain;
+  const char *smtpurl;
 } rlm_gauth_t;
-
-typedef struct rlm_gauth_user_info_t {
-	
-} rlm_gauth_user_info_t;
 
 /*
  *	A mapping of configuration file names to internal variables.
  */
 static const CONF_PARSER module_config[] = {
-	{ "domain", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_gauth_t, domain), NULL },
+	{ FR_CONF_OFFSET("domain", PW_TYPE_STRING, rlm_gauth_t, domain), NULL },
+  { FR_CONF_OFFSET("smtpurl", PW_TYPE_STRING, rlm_gauth_t, smtpurl), .dflt = "smtps://smtp.gmail.com:465" },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -78,8 +76,6 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance) {
  */
 static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *request) {
 
-	RDEBUG("mod authenticate");
-
 	rlm_gauth_t *inst = instance;
 
 	VALUE_PAIR *username_vp, *password_vp;
@@ -93,20 +89,21 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 	username_vp = request->username;
 
 	const char *username, *password;
-	char *talloc_username;
+  const char *domain = inst->domain;
+  const char *received_username = username_vp->vp_strvalue;
 
 	// Check if the username already has the domain
-	if (!strstr(username_vp->vp_strvalue, inst->domain)) {
-		talloc_username = talloc_strdup(NULL, username_vp->vp_strvalue);
-		username = talloc_strdup_append(talloc_username, inst->domain);
-	} else {
-		username = username_vp->vp_strvalue;
-	}
+	if (strstr(received_username, domain)) {
+		username = received_username;
+  } else {
+    char *talloc_username = talloc_strdup(NULL, received_username);
+    username = talloc_strdup_append(talloc_username, inst->domain);
+  }
 	
 	password = password_vp->vp_strvalue;
 
 	// Validate user credentials with google
-	USER_CREDENTIALS valid_credentials = validate_user_credentials(username, password);
+	USER_CREDENTIALS valid_credentials = validate_user_credentials(instance, username, password);
 
 	if (valid_credentials == USER_CREDENTIALS_VALID) {
 		return RLM_MODULE_OK;
@@ -119,9 +116,6 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
  *	Authenticate the user with the given password.
  */
 static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *request) {
-
-	RDEBUG("MOD Authenticate");
-	
 	return RLM_MODULE_OK;
 }
 
@@ -169,9 +163,11 @@ static int mod_detach(UNUSED void *instance) {
 
 // Private Methods
 
-static USER_CREDENTIALS validate_user_credentials(const char *username, const char *password) {
+static USER_CREDENTIALS validate_user_credentials(void *instance, const char *username, const char *password) {
 
 	DEBUG("Validate username `%s`", username);
+
+  rlm_gauth_t *inst = instance;
 
 	USER_CREDENTIALS user_credentials_status = USER_CREDENTIALS_VALID;
 
@@ -181,7 +177,7 @@ static USER_CREDENTIALS validate_user_credentials(const char *username, const ch
   curl = curl_easy_init();
   if(curl) {
     /* This is the URL for your mailserver */ 
-    curl_easy_setopt(curl, CURLOPT_URL, "smtps://smtp.gmail.com:465");
+    curl_easy_setopt(curl, CURLOPT_URL, inst->smtpurl);
     curl_easy_setopt(curl, CURLOPT_USE_SSL, CURLUSESSL_ALL);
 
     curl_easy_setopt(curl, CURLOPT_USERNAME, username);
