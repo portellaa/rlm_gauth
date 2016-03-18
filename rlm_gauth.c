@@ -36,7 +36,7 @@ static VALUE_PAIR *find_password(REQUEST *request);
  */
 typedef struct rlm_gauth_t {
 	const char *domain;
-  const char *smtpurl;
+  const char *smtp_url;
 } rlm_gauth_t;
 
 /*
@@ -44,7 +44,7 @@ typedef struct rlm_gauth_t {
  */
 static const CONF_PARSER module_config[] = {
 	{ FR_CONF_OFFSET("domain", PW_TYPE_STRING, rlm_gauth_t, domain), NULL },
-  { FR_CONF_OFFSET("smtpurl", PW_TYPE_STRING, rlm_gauth_t, smtpurl), .dflt = "smtps://smtp.gmail.com:465" },
+  { FR_CONF_OFFSET("smtp_url", PW_TYPE_STRING, rlm_gauth_t, smtp_url), .dflt = "smtps://smtp.gmail.com:465" },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -165,7 +165,7 @@ static int mod_detach(UNUSED void *instance) {
 
 static USER_CREDENTIALS validate_user_credentials(void *instance, const char *username, const char *password) {
 
-	DEBUG("Validate username `%s`", username);
+  DEBUG("Validate username `%s`", username);
 
   rlm_gauth_t *inst = instance;
 
@@ -177,7 +177,7 @@ static USER_CREDENTIALS validate_user_credentials(void *instance, const char *us
   curl = curl_easy_init();
   if(curl) {
     /* This is the URL for your mailserver */ 
-    curl_easy_setopt(curl, CURLOPT_URL, inst->smtpurl);
+    curl_easy_setopt(curl, CURLOPT_URL, inst->smtp_url);
     curl_easy_setopt(curl, CURLOPT_USE_SSL, CURLUSESSL_ALL);
 
     curl_easy_setopt(curl, CURLOPT_USERNAME, username);
