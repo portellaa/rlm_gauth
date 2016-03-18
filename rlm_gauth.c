@@ -42,8 +42,8 @@ typedef struct rlm_gauth_t {
  *	A mapping of configuration file names to internal variables.
  */
 static const CONF_PARSER module_config[] = {
-	{ FR_CONF_OFFSET("domain", PW_TYPE_STRING, rlm_gauth_t, domain), NULL },
-  { FR_CONF_OFFSET("smtp_url", PW_TYPE_STRING, rlm_gauth_t, smtp_url), .dflt = "smtps://smtp.gmail.com:465" },
+	{ "domain", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_gauth_t, domain), NULL },
+  { "smtp_url", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_gauth_t, smtp_url), "smtps://smtp.gmail.com:465" },
 	CONF_PARSER_TERMINATOR
 };
 
