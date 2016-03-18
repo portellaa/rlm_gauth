@@ -165,13 +165,13 @@ static int mod_detach(UNUSED void *instance) {
 
 static USER_CREDENTIALS validate_user_credentials(void *instance, const char *username, const char *password) {
 
-  DEBUG("Validate username `%s`", username);
-
   rlm_gauth_t *inst = instance;
 
-	USER_CREDENTIALS user_credentials_status = USER_CREDENTIALS_VALID;
+  DEBUG("Validate username `%s`", username);
 
-	CURL *curl;
+  USER_CREDENTIALS user_credentials_status = USER_CREDENTIALS_VALID;
+
+  CURL *curl;
   CURLcode res;
  
   curl = curl_easy_init();
